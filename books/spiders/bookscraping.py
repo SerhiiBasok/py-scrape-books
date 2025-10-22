@@ -31,8 +31,8 @@ class BookscrapingSpider(scrapy.Spider):
             "price": float(
                 response.css("p.price_color::text").get().replace("£", "").strip()
             ),
-            "amount_in_stock": response.css(
-                "th:contains('Availability') + td::text"
+            "amount_in_stock": response.xpath(
+                "//th[text()='Availability']/following-sibling::td/text()"
             ).get(),
             "rating": all_ratings.get(
                 response.css("p.star-rating::attr(class)").get().split()[-1], 0
@@ -41,5 +41,7 @@ class BookscrapingSpider(scrapy.Spider):
                 "ul.breadcrumb li:nth-last-child(2) a::text"
             ).get(),
             "description": response.css("#product_description + p::text").get(),
-            "upc": response.css("th:contains(UPC) + td::text").get(),
+            "upc": response.xpath(
+                "//th[text()='UPC']/following-sibling::td/text()"
+            ).get(),
         }
