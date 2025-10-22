@@ -1,3 +1,5 @@
+import re
+
 import scrapy
 from scrapy.http import Response
 
@@ -28,14 +30,44 @@ class BookscrapingSpider(scrapy.Spider):
 
         yield {
             "title": response.css("h1::text").get(),
-            "price": float(
-                response.css("p.price_color::text").get().replace("£", "").strip()
+            "price": (
+                float(
+                    response.css("p.price_color::text")
+                    .get(default="£0")
+                    .replace("£", "")
+                    .strip()
+                )
+                if response.css("p.price_color::text").get()
+                else 0.0
             ),
-            "amount_in_stock": response.xpath(
-                "//th[text()='Availability']/following-sibling::td/text()"
-            ).get(),
+            "amount_in_stock": (
+                int(
+                    re.search(
+                        r"\d+",
+                        response.xpath(
+                            "//th[text()='Availability']/following-sibling::td/text()"
+                        ).get(default="0"),
+                    ).group()
+                )
+                if re.search(
+                    r"\d+",
+                    response.xpath(
+                        "//th[text()='Availability']/following-sibling::td/text()"
+                    ).get(default="0"),
+                )
+                else 0
+            ),
             "rating": all_ratings.get(
-                response.css("p.star-rating::attr(class)").get().split()[-1], 0
+                (
+                    (
+                        response.css("p.star-rating::attr(class)")
+                        .get(default="")
+                        .split()[-1]
+                    )
+                    if response.css("p.star-rating::attr(class)").get()
+                    else ""
+                ),
+                0,
             ),
             "category": response.css(
                 "ul.breadcrumb li:nth-last-child(2) a::text"
